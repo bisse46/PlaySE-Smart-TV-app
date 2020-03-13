@@ -58,8 +58,7 @@ function setTmpChannel(newId) {
 }
 
 function getDeviceYear() {
-    var pluginNNavi = document.getElementById('pluginObjectNNavi');
-    var version = pluginNNavi.GetFirmware();
+    var version = webapis.productinfo.getSmartTVServerVersion();
     version = version && version.match(/INFOLINK([0-9]+)/);
     if (version)
         return +version[1];
@@ -131,7 +130,7 @@ function loadingStart() {
     try {
         if (loadingTimer == 0) {
             loadingTimer = window.setTimeout(function () {
-                $('#loading').sfLoading('show');
+                $('#spinner-img').show();
             }, 500);
         }
     } catch(err) {
@@ -143,7 +142,7 @@ function loadingStop() {
     try {
         clearTimeout(loadingTimer);
         loadingTimer = 0;
-        $('#loading').sfLoading('hide');  
+        $('#spinner-img').hide();
     } catch(err) {
         return;
     }
@@ -596,7 +595,6 @@ function requestUrl(url, cbSucces, extra) {
                 retrying = false;
                 data = null;
                 callUrlCallBack(requestedLocation, cbSucces, status, xhr);
-                xhr.destroy();
                 xhr = null;
                 if (extra.cookie)
                     deleteCookie(extra.cookie);
@@ -672,7 +670,7 @@ function httpRequest(url, extra) {
     if (extra.timeout || extra.timeout === 0) {
         timer = window.setTimeout(function() {
             xhr.abort();
-            xhr.destroy();
+            xhr = null;
             handleHttpResult(url, timer, extra, {status:'timeout'});
             timer=-1;
         }, extra.timeout);
@@ -686,7 +684,6 @@ function httpRequest(url, extra) {
                               location: xhr.getResponseHeader('location'),
                               xhr     : xhr
                              });
-            xhr.destroy();
             xhr = null;
         }
     };
@@ -713,7 +710,6 @@ function httpRequest(url, extra) {
                       xhr     : xhr
                      };
         result = handleHttpResult(url, timer, extra, result);
-        xhr.destroy();
         xhr = null;
         return result;
     }
@@ -842,10 +838,10 @@ function waitForImages(callback, retries) {
 
 function fixCss() {
     if (deviceYear >= 2014) {
-        $('#footer-clock').css({'bottom':'16px'});
-        $('.confirmExit').css({'padding':'6px 10px'});
+        $('#footer-clock').css({'bottom':'32px'});
+        $('.confirmExit').css({'padding':'12px 20px'});
     } else if (deviceYear > 2011) {
-        $('.confirmExit').css({'padding':'10px', 'padding-bottom':'5px'});
+        $('.confirmExit').css({'padding':'20px', 'padding-bottom':'10px'});
     }
 }
 
@@ -1038,7 +1034,7 @@ function itemToHtml(Item, OnlyReturn) {
     if (Item.name.length > 2*LINE_LENGTH)
         Item.description = '';
     else if (Item.name.length > LINE_LENGTH)
-        html += ' style=" max-height:11px;"';
+        html += ' style=" max-height:22px;"';
     html += '>' + Item.description + '</span>';
     html += '</div>';
     html += '</div>';
@@ -1322,6 +1318,10 @@ function Redirect(url, no_log) {
 }
 
 function Log(msg, timeout) {
-    // httpRequest('http://<LOGSERVER>/log?msg=\'[' + curWidget.name + '] ' + seqNo++ % 10 + ' : ' + msg + '\'', null, {no_log:true, logging:true, timeout:((timeout) ? 100: null)});
-    // alert(msg);
+    // httpRequest('http://<LOGSERVER>/log?msg=\'[' + tizen.application.getCurrentApplication().appInfo.name + '] ' + seqNo++ % 10 + ' : ' + msg + '\'', null, {no_log:true, logging:true, timeout:((timeout) ? 100: null)});
+    alert(msg);
+}
+
+function alert(msg) {
+    // console.log(msg);
 }
