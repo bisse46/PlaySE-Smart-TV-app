@@ -14,7 +14,9 @@ var Main = {
 };
 
 Main.onLoad = function(refresh) {
-    Config.init();
+    if (!Config.init(function() {Main.onLoad(refresh);}))
+        // Need to wait
+        return
     Channel.init();
     Language.fixAButton();
     if (!refresh) {
@@ -53,7 +55,7 @@ Main.onLoad = function(refresh) {
 };
 
 Main.onUnload = function() {
-	Player.deinit();
+	Player.remove();
 };
 
 Main.setClock = function() {

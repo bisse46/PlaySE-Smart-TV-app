@@ -929,7 +929,7 @@ Svt.getPlayUrl = function(url, isLive, streamUrl, cb, failedUrl) {
     if (url.match('oppet-arkiv-api'))
         return Oa.getPlayUrl(url, isLive);
 
-    var video_urls=[], extra = {isLive:isLive};
+    var video_urls=[], extra = {isLive:isLive, useBitrates:true};
 
     if (url.match(/=ChannelsQuery/)) {
         extra.use_offset = true;
