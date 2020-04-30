@@ -64,14 +64,6 @@ var Player = {
     FRONT_DISPLAY_PAUSE: 102
 };
 
-Player.togglePlayer = function() {
-    Log('Player.togglePlayer()');
-    Player.pluginToggled = true;
-    Player.remove();
-    this.pluginPlayer = (this.pluginPlayer+1) % (Player.PLUGIN_VIDEOJS+1);
-    Log('Player.togglePlayer done() plugin:' + Player.pluginPlayer);
-};
-
 Player.OnEvent = function(EventType, param1, param2) {
     Log('Player.OnEvent ' + EventType + '(' + param1 + ', ' + param2 + ')');
     switch (EventType) {
@@ -169,6 +161,9 @@ Player.setFullscreen = function() {
 };
 
 Player.setVideoURL = function(master, url, srtUrl, extra) {
+
+    Player.checkCorrectPlugin(extra.use_vjs);
+
     if (!extra) extra = {};
     videoData = {srt_url:srtUrl, hls_subs:extra.hls_subs};
 
@@ -477,7 +472,7 @@ Player.OnBufferingStart = function() {
 };
 
 Player.OnBufferingProgress = function(percent) {
-    Log('OnBufferingProgress');
+    Log('OnBufferingProgress: ' + percent + '%');
     // Ignore if received without onBufferingStart. Seems sometimes 
     // it's received after onBufferingComplete.
     if (!Player.infoActive)
@@ -492,7 +487,7 @@ Player.OnBufferingComplete = function() {
     retries = 0;
     if (startup && (!useSef || tizen))
         Player.OnRenderingStart();
-    if (startup && startup != true && bufferCompleteCount == 0) {
+    else if (startup && startup != true && bufferCompleteCount == 0) {
         // Resuming - wait for next buffering complete
         bufferCompleteCount = bufferCompleteCount + 1;
         return;
@@ -1197,27 +1192,33 @@ Player.decreaseZoom = function() {
     Player.updateTopOSD();
 };
 
-Player.selectPluginPlayer = function() {
-    if (!Player.pluginToggled) {
-        var oldPluginPlayer = Player.pluginPlayer;
-        if (Player.isLive)
-            Player.pluginPlayer = Player.PLUGIN_VIDEOJS;
-        else
-            Player.pluginPlayer = Player.PLUGIN_AVPLAYER;
-        if (Player.plugin && oldPluginPlayer!=Player.pluginPlayer)
-            Player.plugin.remove();
-    }
-    switch (Player.pluginPlayer) {
-    case Player.PLUGIN_AVPLAYER:
+Player.createPlugin = function(PluginToUse) {
+
+    if (Player.plugin && Player.pluginPlayer!=PluginToUse)
+        Player.plugin.remove();
+
+    Player.pluginPlayer = PluginToUse;
+    if (Player.pluginPlayer == Player.PLUGIN_AVPLAYER)
         Player.plugin = AvPlayer;
-        break;
-
-    case Player.PLUGIN_VIDEOJS:
+    else
         Player.plugin = VideoJsPlayer;
-        break;
+    Player.plugin.create();
+};
 
-    default:
-        Player.plugin = null;
+Player.togglePlugin = function() {
+    Player.pluginToggled = true;
+    Player.remove();
+    this.pluginPlayer = (this.pluginPlayer+1) % (Player.PLUGIN_VIDEOJS+1);
+    Log('Plugin toggled, plugin:' + Player.pluginPlayer);
+};
+
+Player.checkCorrectPlugin = function(UseVjs) {
+    if (Player.pluginToggled)
+        return;
+
+    var PluginToUse = (UseVjs) ? Player.PLUGIN_VIDEOJS : Player.PLUGIN_AVPLAYER;
+    if (Player.pluginPlayer != PluginToUse) {
+        Player.createPlugin(PluginToUse)
     }
 };
 
@@ -1251,8 +1252,7 @@ Player.startPlayer = function(url, isLive, startTime) {
     this.hideDetailedInfo();
     if (Player.plugin)
         Player.plugin.stop();
-    Player.selectPluginPlayer();
-    Player.plugin.create();
+    Player.createPlugin(Player.pluginPlayer);
     Player.setTopOSDText('');
     $('.currentTime').text('');
     $('.totalTime').text('');
